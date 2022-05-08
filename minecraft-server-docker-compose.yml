@@ -24,90 +24,86 @@
 # docker exec ContainerName rcon-cli stop
 
 volumes:
-  minecraft-data:
+  mc-volume:
+  external:
+  name: mc-volume
 
 services:
   minecraft:
     image: itzg/minecraft-bedrock-server
     volumes:
-      - minecraft-data:/data
+      - mc-volume:/data
       - ./plugins:/plugins:ro
     environment:
       EULA: 'true'
-      CONSOLE: 'false'
-      # Server icon (replace with yours)
-      ICON: https://www.heyvaldemar.com/wp-content/uploads/heyvaldemar-minecraft.png
-      # Minecraft server type (replace with yours)
-      # VANILLA, FORGE, BUKKIT, SPIGOT, PAPER, CURSEFORGE, SPONGEVANILLA, FABRIC
-      TYPE: VANILLA
-      # Paper Minecraft server version (replace with yours)
-      VERSION: LATEST
-      # Memory limit (replace with yours)
-      MEMORY: 1G
-      # Server name (replace with yours)
-      SERVER_NAME: MC.DIMA.LIFE - DimaFriend - Minecraft
-      # Message of the day (replace with yours)
-      MOTD: MC.DIMA.LIFE - Welcome to Dima's Minecraft server
-      # Level type and generator settings (replace with yours)
-      # DEFAULT, FLAT, LARGEBIOMES, AMPLIFIED, CUSTOMIZED, BUFFET
-      LEVEL_TYPE: DEFAULT
-      # World save name (replace with yours)
-      LEVEL: minecraft-world-1
+      SERVER_NAME: mc-server
       # Game mode (replace with yours)
       # creative, survival, adventure, spectator (replace with yours)
-      MODE: survival
+      GAMEMODE: creative
       # Force gamemode (replace with yours)
       FORCE_GAMEMODE: 'false'
       # Difficulty (replace with yours)
       # peaceful, easy, normal, hard
       DIFFICULTY: normal
-      # Hardcore (replace with yours)
-      HARDCORE: 'false'
-      # Announce player achievements (replace with yours)
-      ANNOUNCE_PLAYER_ACHIEVEMENTS: 'true'
+      ALLOW-CHEATS: 'true'
       # Max players (replace with yours)
       MAX_PLAYERS: 10
-      # PVP mode (replace with yours)
-      PVP: 'true'
-      # Allow flight (replace with yours)
-      ALLOW_FLIGHT: 'false'
-      # Max world size (replace with yours)
-      MAX_WORLD_SIZE: 10000
-      # Max build height (replace with yours)
-      MAX_BUILD_HEIGHT: 265
-      # Spawn animals (replace with yours)
-      SPAWN_ANIMALS: 'true'
-      # Spawn monsters (replace with yours)
-      SPAWN_MONSTERS: 'true'
-      # Spawn NPCs (replace with yours)
-      SPAWN_NPCS: 'true'
-      # Set spawn protection (replace with yours)
-      SPAWN_PROTECTION: 0
-      # View distance (replace with yours)
-      VIEW_DISTANCE: 10
       # Online mode (replace with yours)
       ONLINE_MODE: 'true'
-      # Snooper (replace with yours)
-      SNOOPER_ENABLED: 'true'
-      # Enable command block (replace with yours)
-      ENABLE_COMMAND_BLOCK: 'true'
+      WHITE_LIST: 'false'
+      # View distance (replace with yours)
+      VIEW_DISTANCE: 25
+      TICK_DISTANCE: 4
+      PLAYER_IDLE_TIMEOUT: 60
+      MAX_THREADS: 2
+      LEVEL_NAME:
+      LEVEL_SEED:
+      DEFAULT_PLAYER_PERMISSION_LEVEL: 'member'
+      TEXTUREPACK_REQUIRED: 'false'
+      SERVER_AUTHORITATIVE_MOVEMENT:
+      PLAYER_MOVEMENT_SCORE_THRESHOLD:
+      PLAYER_MOVEMENT_DISTANCE_THRESHOLD:
+      PLAYER_MOVEMENT_DURATION_THRESHOLD_IN_MS:
+      CORRECT_PLAYER_MOVEMENT:
+      # Level type and generator settings (replace with yours)
+      # DEFAULT, FLAT, LEGACY
+      LEVEL_TYPE: DEFAULT
+      MOTD: mc-server - Welcome to Dima's Minecraft server
     ports:
       - "19132:19132"
     restart: unless-stopped
 
-  backups:
-    image: itzg/mc-backup
+  backup:
+    image: kaiede/minecraft-bedrock-backup
+    name: minecraft_backup
+    restart: always
+    depends_on:
+      - "mc-server"
     environment:
-      # Minecraft server backups interval (replace with yours)
-      BACKUP_INTERVAL: 23h
-      # Minecraft server backups prune interval (replace with yours)
-      PRUNE_BACKUPS_DAYS: 7
+      
     volumes:
     - minecraft-data:/data:ro
     # Minecraft backups location
     - /srv/minecraft-data/backups:/backups
+    #tty: 'true'
+    #volumes:
+    #  - /var/run/docker.sock:/var/run/docker.sock
+    #  - /opt/bedrock/backups:/backups
+    #  - /opt/bedrock/server:/server
     network_mode: 'service:minecraft'
     restart: unless-stopped
     depends_on:
       minecraft:
         condition: service_healthy
+        
+    containers:
+      bedrock:
+       - name: mc-server
+         worlds:
+        - /server/worlds/MyWorld
+    schedule:
+      interval: 23h
+    trim:
+      trimDays: 2
+      keepDays: 14
+      minKeep: 1
